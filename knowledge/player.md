@@ -200,6 +200,8 @@ Streamout (scheduled broadcast).
 | `tv` | bool | Removes the controls and the play button and forces automatic playback. Interactions stay visible but are not clickable. Default and non-editable setting for a streamout | 0 | yes | no |
 | `user_token` | string(64) | Identifies a specific user by permanently assigning them the same token | - | yes | yes |
 | `volume` | float | Volume setting from 0.0 to 1.0 | 1.0 | yes | yes |
+| `waveform` | bool | Audio medias: shows the interactive waveform skin drawn from the media's sound. `0` restores the cover display, `1` forces the skin on a media that carries an uploaded cover. No effect when the media has no peaks file (see below) | 1 | no | no |
+| `waveform_color` | RRGGBB | Accent color of the waveform; the background shade is derived from it. Takes an HTML color without the #. E.g. FF01F8 | 44B0A7 | no | no |
 
 ## Choosing parameters that matter
 
@@ -217,6 +219,31 @@ Streamout (scheduled broadcast).
 - **`user_token`** ties playback events to one viewer, which is what makes resume and per-viewer
   engagement possible — see `knowledge/analytics-and-feeds.md`,
 - **`tv=1`** strips the controls and forces playback, the signage mode.
+
+## The waveform skin on audio medias
+
+An audio media whose encoding produced a peaks file plays under a SoundCloud-like waveform instead
+of its cover: the wave draws the sound, a click or a drag on it seeks. Nothing to enable — the
+skin is on by default whenever the peaks exist and the media has no cover of your own.
+
+- **an audio media carrying a cover you uploaded shows that cover, not the skin.** The waveform
+  covers the audios without one. To get the skin anyway on such a media, set its `waveform` field
+  to `true` through the API, or pass `waveform=1` in the URL,
+- `waveform=0` restores the cover display for one embed. The account-wide default is the
+  `waveform` company preference, and a media can be forced either way through the API; the URL
+  parameter always wins (`knowledge/api.md`),
+- `waveform_color=RRGGBB` sets the accent; the darker background shade is derived from it. Left
+  unset, the account's `waveform_color` preference applies, then the platform teal (`44B0A7`),
+- a custom skin (the `skin` parameter) can restyle it through two CSS custom properties,
+  `--sl-waveform-color` and `--sl-waveform-background` — the skin stylesheet loads after the
+  player's own colors, so a `:root` rule is enough,
+- an audio media encoded before the feature has no peaks file: the skin stays off and the player
+  renders as before. Re-encoding the media produces one,
+- keyboard and assistive-tech users keep the classic seek bar: the waveform is a pointer-only
+  companion surface, it removes nothing.
+
+The peaks data itself is public and consumable outside the player — format and URLs in
+`knowledge/player.md`.
 
 ## Legacy helper scripts
 
@@ -444,6 +471,10 @@ A media carrying several audio languages is flagged `metadata.global.is_multiple
 - server side, `GET /medias/{media_id}/audio-tracks` lists the declared tracks and the API can add,
   replace, rename or promote them — see `knowledge/api.md`. `GET /medias/{media_id}` also returns
   `source.audio_tracks` for a read-only view, on a single media only,
+- per-track management needs a media produced by the current encoding pipeline. To know which
+  medias those are without a call each, read `source.encoding_version` over a listing (API 5.46) —
+  `2` is the current pipeline, `1` the legacy one, and an **absent** field means the media publishes
+  nothing yet. `knowledge/api.md` spells out why that absence matters,
 - those endpoints need API 5.31 (5.37 for `source.audio_tracks`) and the `multiple_audio` filter
   webservices 5.20. Check `scripts/openapi_lookup.py show …` against the published description
   before relying on them: an older server answers `404`, or accepts the filter and ignores it.
@@ -462,6 +493,28 @@ A media carrying several audio languages is flagged `metadata.global.is_multiple
   `subtitle=fr-cc` its closed-caption variant, `subtitle=0` disables them,
 - tracks produced by speech-to-text also expose a word-level file, which is what
   `generateWords()` from the JS SDK renders as a live transcript.
+
+## Waveform peaks
+
+An encoded audio media publishes a peaks sidecar next to its other assets — the amplitude
+silhouette the player's waveform skin draws (`knowledge/player.md`). It is plain public
+JSON you can consume for your own rendering:
+
+```json
+{"version": 1, "count": 2000, "peaks": [0, 4, 18, 63, …]}
+```
+
+- amplitudes are integers `0..100` spread over the whole duration; `count` mirrors `peaks.length` —
+  2000 buckets, fewer only when the source holds fewer samples,
+- `GET /medias/{media_id}` returns the sidecar URL as `peaks.files.index` (API 5.44, encoded audio
+  medias only). The file lives on the media's asset tree, under `…/medias/{media_id}/peaks/peaks.json`,
+- a multi-track media publishes one sidecar per track, named by track token (`peaks/en.json`,
+  `peaks/en-ad.json`) beside the default `peaks.json`; on medias produced by the current encoding
+  pipeline, the file index also lists an `audio` array whose entries each carry their `peaks_url`,
+- on a token-protected media the player fetches the sidecar through a tokenized URL, exactly as it
+  does for the storyboard mosaic,
+- an audio media encoded before the feature has no sidecar: expect a `404` and skip the drawing —
+  that is what the player does. Re-encoding the media produces one.
 
 ## Live and Streamout
 
