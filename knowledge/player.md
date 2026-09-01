@@ -154,7 +154,7 @@ Streamout (scheduled broadcast).
 | `interaction` | language code / bool | Forces the language or disables the display of interactions. E.g. interaction=fr or interaction=0 | 1 | no | no |
 | `interface` | bool | Disables all interface elements (buttons, controls, panel, etc.) | 1 | yes | no |
 | `landing` | bool | Shows the clickable cover image and a logo in place of the player. The player is loaded after clicking the image. | 0 | no | no |
-| `live_dvr` | bool | Enables DVR mode during a live | 1 | yes | no |
+| `live_dvr` | bool | Shows the DVR controls during a live. The rewind window exists only if the live was created with live[dvr]=true (API default: false since API 5.51) | 1 | yes | no |
 | `live_id` | string | Identifier of the live or "stream name" | - | yes | no |
 | `logo` | bool | Whether to show the logo | 1 | yes | yes |
 | `logo_alpha` | 0-100 | Overrides the transparency setting, only if the logo is defined from a logo_url parameter | 100 | yes | yes |
@@ -518,8 +518,10 @@ JSON you can consume for your own rendering:
 
 ## Live and Streamout
 
-- a **live** channel plays through the same player with `live_id=STREAM_NAME`; `live_dvr=1` enables
-  the DVR window,
+- a **live** channel plays through the same player with `live_id=STREAM_NAME`; `live_dvr=1` shows
+  the DVR controls — but the rewind window itself exists only if the live was created with
+  `live[dvr]=true`. The API default is `false` since API 5.51, so the embed parameter alone does
+  not give viewers a DVR,
 - a **Streamout** is a scheduled broadcast — a playlist played on a timetable — embedded with
   `str_id=STREAMOUT_ID`. Several player parameters do not apply to it (the table in
   `knowledge/player.md` has a column for this),
