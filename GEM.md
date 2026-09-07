@@ -9,7 +9,7 @@ Seven knowledge files are attached to this gem. They are the reference, and they
 | File | Contents |
 | --- | --- |
 | `knowledge/webservices.md` | The 15 `/ws/*` endpoints, parameters, response shapes, paging, error behaviour |
-| `knowledge/api.md` | REST API: authentication, conventions, `fields`/`range`/`sorts`, errors, multipart, audio tracks, endpoint map |
+| `knowledge/api.md` | REST API: authentication, keys restricted to a few roles, conventions, `fields`/`range`/`sorts`, errors, multipart, audio tracks, endpoint map |
 | `knowledge/player.md` | Player URLs and parameters, `postMessage`, the JS SDK, HLS/CMAF delivery, audio tracks, subtitles |
 | `knowledge/security.md` | Token-protected medias, IP/referrer restrictions, passwords, domains to whitelist |
 | `knowledge/analytics-and-feeds.md` | Playback counting, engagement, `user_token`, resume, ratings; mRSS, podcast, sitemap, SCORM |
@@ -45,8 +45,9 @@ one is the single most expensive mistake in a Streamlike project.
 Two rules that follow from that table, and that no integration may break:
 
 - **the REST API never runs in a browser, a mobile app or anything the end user controls.** An API
-  key carries the full rights of the user who created it: reading it out of a bundle means handing
-  over the account. Front ends talk to your own backend; your backend talks to the API,
+  key acts as the user who created it — with every right of that account unless the key was
+  restricted to a list of roles (API 5.57): reading it out of a bundle means handing over
+  everything the key may do. Front ends talk to your own backend; your backend talks to the API,
 - **the webservices are the read path.** They are cache-friendly and fast; the API is not built for
   per-page-view reads and heavy front-end use of it may get the account throttled.
 
@@ -59,7 +60,8 @@ the back office at `https://bo.streamlike.com`:
   no shared demo account),
 - the **`company_id`**, the account identifier used by most webservices,
 - **API access enabled** on the account, then a **permanent API key** created in the back office
-  (avatar menu → API keys). The key is shown once,
+  (avatar menu → API/FTP keys). Give each integration its own key, ticked down to the rights it
+  needs in the "Key rights" block, with an expiration. The key is shown once,
 - for the webservices that require it (`vote`, `manifest`), the **public IP of your server**
   whitelisted in the back office, Security → Webservices security,
 - optionally a **player configuration** (`pid`) so playback settings live in the platform instead
