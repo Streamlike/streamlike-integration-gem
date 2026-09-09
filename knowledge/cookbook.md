@@ -34,7 +34,7 @@ where per-user state lives.
 
 A feed that only reads needs no API key at all — the webservices are the read path. The moment
 your backend does call the API (a playback token for a protected media, the editorial removal of
-step 4), give it a key of its own, restricted to those roles and nothing more (API 5.57), rather
+step 4), give it a key of its own, restricted to those roles and nothing more (API 5.30), rather
 than a key that carries the whole account. `knowledge/api.md` shows the call; step 4 shows the
 check.
 
@@ -150,7 +150,7 @@ deduplication to you — check your own store before calling, or one enthusiasti
 average on their own. The aggregate comes back in `/ws/media` as `statistics.rating_hits` and
 `rating_totalvalue`.
 
-Two things about the answer. **The accepted range is 0 to 5** from webservices 5.26, `0` being the
+Two things about the answer. **The accepted range is 0 to 5** from webservices 5.20, `0` being the
 worst grade — so a "dislike" sent as `0` is stored, where an older server rejected it. And
 rejection is quiet: the body is `{"vote":{"res":false}}` with a **200**, which covers both an
 out-of-range value and a write that failed on our side. Read `res` before you tell the user
@@ -285,9 +285,9 @@ Available fields: `id`, `name`, `description`, `credits`, `keywords`, `customs`,
 videos, which is usually the feature people are impressed by. The matching excerpts come back in
 `metadata.highlight` on the medias that matched, with the words wrapped in `<em>` — that is what
 turns a result list into a useful one, and what lets you deep-link to a timecode when a subtitle
-matched. **Stay in JSON when you search on a server older than webservices 5.26**: the excerpts
+matched. **Stay in JSON when you search on a server older than webservices 5.20**: the excerpts
 came out under element names XML does not allow, and the document you got back with `query` and
-`f=xml` together did not parse at all. From 5.26 each excerpt sits in a `<value>` and XML works.
+`f=xml` together did not parse at all. From 5.20 each excerpt sits in a `<value>` and XML works.
 
 **Languages and countries.** `/ws/languages` and `/ws/countries` build filters that only offer
 values the catalog actually has. Watch the case — `languages` answers `fr`, `countries` answers

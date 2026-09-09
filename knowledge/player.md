@@ -154,7 +154,7 @@ Streamout (scheduled broadcast).
 | `interaction` | language code / bool | Forces the language or disables the display of interactions. E.g. interaction=fr or interaction=0 | 1 | no | no |
 | `interface` | bool | Disables all interface elements (buttons, controls, panel, etc.) | 1 | yes | no |
 | `landing` | bool | Shows the clickable cover image and a logo in place of the player. The player is loaded after clicking the image. | 0 | no | no |
-| `live_dvr` | bool | Accepted for compatibility; the current player does not read it. The rewind window comes from the live itself: about 45 minutes when it was created with live[dvr]=true, about 100 seconds otherwise (API default: false since API 5.51) | 1 | yes | no |
+| `live_dvr` | bool | Accepted for compatibility; the current player does not read it. The rewind window comes from the live itself: about 45 minutes when it was created with live[dvr]=true, about 100 seconds otherwise (API default: false since API 5.30) | 1 | yes | no |
 | `live_id` | string | Identifier of the live or "stream name" | - | yes | no |
 | `logo` | bool | Whether to show the logo | 1 | yes | yes |
 | `logo_alpha` | 0-100 | Overrides the transparency setting, only if the logo is defined from a logo_url parameter | 100 | yes | yes |
@@ -474,10 +474,10 @@ A media carrying several audio languages is flagged `metadata.global.is_multiple
   replace, rename or promote them — see `knowledge/api.md`. `GET /medias/{media_id}` also returns
   `source.audio_tracks` for a read-only view, on a single media only,
 - per-track management needs a media produced by the current encoding pipeline. To know which
-  medias those are without a call each, read `source.encoding_version` over a listing (API 5.46) —
+  medias those are without a call each, read `source.encoding_version` over a listing (API 5.30) —
   `2` is the current pipeline, `1` the legacy one, and an **absent** field means the media publishes
   nothing yet. `knowledge/api.md` spells out why that absence matters,
-- those endpoints need API 5.31 (5.37 for `source.audio_tracks`) and the `multiple_audio` filter
+- those endpoints need API 5.30 (`source.audio_tracks` too) and the `multiple_audio` filter
   webservices 5.20. Check `scripts/openapi_lookup.py show …` against the published description
   before relying on them: an older server answers `404`, or accepts the filter and ignores it.
 
@@ -508,7 +508,7 @@ JSON you can consume for your own rendering:
 
 - amplitudes are integers `0..100` spread over the whole duration; `count` mirrors `peaks.length` —
   2000 buckets, fewer only when the source holds fewer samples,
-- `GET /medias/{media_id}` returns the sidecar URL as `peaks.files.index` (API 5.44, encoded audio
+- `GET /medias/{media_id}` returns the sidecar URL as `peaks.files.index` (API 5.30, encoded audio
   medias only). The file lives on the media's asset tree, under `…/medias/{media_id}/peaks/peaks.json`,
 - a multi-track media publishes one sidecar per track, named by track token (`peaks/en.json`,
   `peaks/en-ad.json`) beside the default `peaks.json`; on medias produced by the current encoding
@@ -523,7 +523,7 @@ JSON you can consume for your own rendering:
 - a **live** channel plays through the same player with `live_id=STREAM_NAME`. The viewer can
   always rewind a little: the player exposes whatever the HLS playlist holds, and a live keeps
   about **100 seconds** behind the live edge. A live created with `live[dvr]=true` keeps about
-  **45 minutes** instead — that is what the DVR is. The API default is `false` since API 5.51.
+  **45 minutes** instead — that is what the DVR is. The API default is `false` since API 5.30.
   The `live_dvr` embed parameter is accepted but the current player does not read it,
 - a **Streamout** is a scheduled broadcast — a playlist played on a timetable — embedded with
   `str_id=STREAMOUT_ID`. Several player parameters do not apply to it (the table in
