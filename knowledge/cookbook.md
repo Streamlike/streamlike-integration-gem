@@ -53,9 +53,10 @@ app.get('/feed', async (req, res) => {
   const url = new URL('https://cdn.streamlike.com/ws/playlist');
   url.searchParams.set('playlist_id', process.env.SL_PLAYLIST_ID);
   url.searchParams.set('pagesize', String(pageSize));
-  url.searchParams.set('page', String(offset));   // an offset, not a page number
+  url.searchParams.set('offset', String(offset)); // the rank of the first item, not a page number
   url.searchParams.set('orderby', 'position');
-  url.searchParams.set('encoded', '1');           // skip medias still encoding
+  url.searchParams.set('encoded', '1');           // skip media still encoding
+  // a vertical, reels-style feed: url.searchParams.append('format[]', 'portrait');
   url.searchParams.set('f', 'json');
 
   // small dismissal lists can be pushed down to the platform
@@ -105,15 +106,15 @@ Four details that bite:
 ```
 https://cdn.streamlike.com/play?med_id=MEDIA_ID
   &pid=PLAYER_CONFIG_ID      // colours, logo, controls — set once in the back office
-  &autostart=1&muted=1       // the only autoplay browsers allow
+  &autostart=1&muted=1       // silent start, whatever the browser would allow
   &events=1                  // lets your page drive it
   &user_token=USER_TOKEN     // ties playback to this viewer
   &fill_browser=1            // fills the card, cropping rather than distorting
 ```
 
 Everything is reported for you: playbacks, engagement, resume points. Drive the visible card with
-`postMessage(['play'])` / `['pause']`, and listen for `["sl-state","ended"]` to advance — see
-`knowledge/player.md`.
+`postMessage(['play'])` / `['pause']`, and advance when the parsed message is
+`["sl-state", "ended", MEDIA_ID]` — see `knowledge/player.md`.
 
 Pause the cards that scroll off screen. A dozen iframes all playing will saturate the device and
 the connection, and will count as a dozen playbacks.
@@ -121,7 +122,7 @@ the connection, and will count as a dozen playbacks.
 **Native player, the long path.** `ExoPlayer` or `AVPlayer` on the HLS master, which
 `knowledge/player.md` explains how to find. Better control of gestures and preloading, at a
 price: you must report playbacks (`o.k`) and engagement (`eng.k`) yourself, or the account's
-statistics will show an empty app — see `knowledge/analytics-and-feeds.md`. Handle protected medias
+statistics will show an empty app — see `knowledge/analytics-and-feeds.md`. Handle protected media
 yourself too.
 
 For a first version, the WebView path is usually right. Move to native when a measured problem
@@ -229,7 +230,7 @@ that is an unpleasant surprise, so offer "resume" as a choice rather than seekin
 - [ ] every field read off a media is guarded — an empty value is an absent key, covers included,
 - [ ] the feed advances by `pagesize`, and stops on `metadata.size`,
 - [ ] off-screen players are paused,
-- [ ] restricted medias are filtered or handled (`is_tokenized`, `has_password`, `is_secured`),
+- [ ] restricted media are filtered or handled (`is_tokenized`, `has_password`, `is_secured`),
 - [ ] if you play natively, `o.k` and `eng.k` are wired, and the figures in the console match a
       manual test,
 - [ ] the `user_token` is stable per account and carries no personal data,
@@ -239,17 +240,17 @@ that is an unpleasant surprise, so offer "resume" as a choice rather than seekin
 
 # A WebTV or video portal
 
-A site whose pages are playlists and medias: browse, search, watch, and be found by search engines.
+A site whose pages are playlists and media: browse, search, watch, and be found by search engines.
 
 ## The fast route
 
 `generatePlaylistPlayer` from `js-streamlike-sdk` already is a WebTV page — player, list, paging,
-information panel, shareable timecoded links, restricted medias handled:
+information panel, shareable timecoded links, restricted media handled:
 
 ```html
 <div id="channel"></div>
 <script type="module">
-  import { generatePlaylistPlayer } from 'https://cdn.jsdelivr.net/npm/js-streamlike-sdk@3.8.0/dist/index.mjs';
+  import { generatePlaylistPlayer } from 'https://cdn.jsdelivr.net/npm/js-streamlike-sdk@3.10.0/dist/index.mjs';
   await generatePlaylistPlayer('channel', {
     playlistId: 'PLAYLIST_ID',
     listPosition: 'right',
@@ -270,7 +271,7 @@ of playlists and can be used in place of a `playlist_id` in most services — th
 slice of the catalog to one site.
 
 **A channel page.** `/ws/playlist?playlist_id=…&pagesize=12&page=0&orderby=position` returns the
-medias with everything a card needs: `name`, `duration`, `ratio`,
+media with everything a card needs: `name`, `duration`, `ratio`,
 `customization.cover.thumbnaillarge_url`, `permalink`. Give the card a placeholder cover: a media
 without a poster has no `customization.cover` object at all, and neither has one whose encoding is
 still running. Paginate on `metadata.size`, which is always there — the `medias` key is not.
@@ -283,7 +284,7 @@ where nobody filled them in, and it never returns a live nor a media that is not
 Available fields: `id`, `name`, `description`, `credits`, `keywords`, `customs`, `transcription`,
 `permalink`, `subtitle` — searching `transcription` and `subtitle` finds spoken words inside
 videos, which is usually the feature people are impressed by. The matching excerpts come back in
-`metadata.highlight` on the medias that matched, with the words wrapped in `<em>` — that is what
+`metadata.highlight` on the media that matched, with the words wrapped in `<em>` — that is what
 turns a result list into a useful one, and what lets you deep-link to a timecode when a subtitle
 matched. **Stay in JSON when you search on a server older than webservices 5.20**: the excerpts
 came out under element names XML does not allow, and the document you got back with `query` and
@@ -291,7 +292,7 @@ came out under element names XML does not allow, and the document you got back w
 
 **Languages and countries.** `/ws/languages` and `/ws/countries` build filters that only offer
 values the catalog actually has. Watch the case — `languages` answers `fr`, `countries` answers
-`FR` — and note that both count encoded medias whatever their visibility, so they describe the
+`FR` — and note that both count encoded media whatever their visibility, so they describe the
 catalog rather than what a visitor can watch today.
 
 ## Caching
@@ -309,7 +310,7 @@ and media responses is usually enough, with a purge when you publish.
   missing profile answers `<error>No profile exists</error>` with a `200`, and a pipeline that only
   looks at the status code publishes an empty sitemap,
 - **oEmbed**: `https://cdn.streamlike.com/oembed?url=…&format=json` gives other sites a clean way to
-  embed your medias,
+  embed your media,
 - **mRSS and podcast feeds** for syndication and podcast directories,
 - let the player emit its own metadata (leave `nometa` off) so shared links unfurl with a title and
   a thumbnail.
@@ -322,7 +323,7 @@ from domains you do not recognise is the visible symptom.
 
 ---
 
-# Publishing medias from a backend
+# Publishing media from a backend
 
 Getting files into the platform, encoded and published, without a human in the back office.
 
@@ -358,7 +359,7 @@ Encoding is asynchronous. A freshly created media is not playable, and its manif
 yet.
 
 - `GET /pipelines` lists the pipelines and their jobs, with their state and their error when one failed (the job *log* itself is staff-only and answers `403`),
-- `GET /medias?encoded=1` — and `encoded=1` on `/ws/playlist` — filter on medias whose encoding
+- `GET /medias?encoded=1` — and `encoded=1` on `/ws/playlist` — filter on media whose encoding
   finished. Poll that rather than guessing a delay,
 - `POST /jobs/{job_id}/restart` re-runs a failed job, `POST /medias/{media_ids}/actions/reencode`
   re-encodes from the source — but not a multi-track media, which answers
@@ -372,7 +373,7 @@ Front ends should never show a media that is still encoding: filter on `encoded`
 | Goal | Call |
 | --- | --- |
 | Subtitles | `POST /medias/{media_id}/subtitles/{language_id}` |
-| Automatic subtitles | `POST /medias/{media_ids}/actions/speechtotext` |
+| Automatic subtitles | `POST /medias/{media_ids}/actions/speechtotext`, several target languages at once with `speech_to_text[languages][]` |
 | Chapters | `POST /medias/{media_id}/chapters/{language_id}` |
 | Interactions (clickable overlays) | `POST /medias/{media_id}/interactions/{language_id}` |
 | Audio tracks | `POST /medias/{media_id}/audio-tracks/{language_id}`, `…/promote` for a single-track media |
@@ -408,12 +409,17 @@ States are `online`, `offline` and `archived`. Bulk changes go through
   it is the only `401` that a retry ever fixes,
 - **conflicts**: `409` means an operation is already running on that media (a re-encode, an audio
   track update). Wait and retry — `source.encoding_operation_running` on `GET /medias/{media_id}`
-  tells you when it is over, which beats retrying on a timer,
+  tells you when it is over, which beats retrying on a timer. The one write that never answers
+  `409` for this is `actions/speechtotext`: it is accepted, and its subtitles are published by
+  themselves once the running operation ends (`jobs.waiting_for` on the pipeline shows the wait).
+  It does wait for another transcription, though — that one answers `400
+  INVALID_MEDIA_SPEECHTOTEXT_RUNNING` — so ask for your languages in a single call with
+  `speech_to_text[languages][]` rather than one call per language,
 - **idempotency**: `permalink` is a good deduplication key for a pipeline that may run twice — but
-  it is unique platform-wide, not per account, and deleted medias still hold theirs. A generic
+  it is unique platform-wide, not per account, and deleted media still hold theirs. A generic
   slug can come back as `INVALID_PERMALINK` even though nothing in your catalog uses it; prefix
   yours,
 - **soft deletion**: deleting a media hides it from the API and the webservices, but a front end
   holding a cached id will get a `404`. Refresh caches after a purge,
-- **archives**: `Hibernation` endpoints hold medias moved out of active storage. They are not
+- **archives**: `Hibernation` endpoints hold media moved out of active storage. They are not
   playable until retrieved.
