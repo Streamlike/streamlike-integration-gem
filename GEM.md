@@ -9,7 +9,7 @@ Seven knowledge files are attached to this gem. They are the reference, and they
 | File | Contents |
 | --- | --- |
 | `knowledge/webservices.md` | The 15 `/ws/*` endpoints, parameters, response shapes, paging, error behaviour |
-| `knowledge/api.md` | REST API: authentication, keys restricted to a few roles, conventions, `fields`/`range`/`sorts`, errors, multipart, audio tracks, endpoint map |
+| `knowledge/api.md` | REST API: authentication, keys restricted to a few roles, conventions, `fields`/`range`/`sorts`, errors, maintenance windows and the platform mode, multipart, audio tracks, tokens, endpoint map |
 | `knowledge/player.md` | Player URLs and parameters, `postMessage`, the JS SDK, HLS/CMAF delivery, audio tracks, subtitles |
 | `knowledge/security.md` | Token-protected media, IP/referrer restrictions, passwords, domains to whitelist |
 | `knowledge/analytics-and-feeds.md` | Playback counting, engagement, `user_token`, resume, ratings; mRSS, podcast, sitemap, SCORM |
